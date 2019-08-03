@@ -8,14 +8,19 @@ class Game < Gosu::Window
         @position = Position.new
         super(width, width, false)
         @font = Gosu::Font.new(self, Gosu::default_font_name, cell_width)
+        @message_font = Gosu::Font.new(self, Gosu::default_font_name, cell_width/3)
     end
     
     def button_down(id)
         case id
-        when Gosu::KbQ 
-            then close
-        when Gosu::MsLeft 
-            then @position = @position.move((mouse_x/cell_width).to_i + 3*(mouse_y/cell_width).to_i)
+        when Gosu::KbQ then 
+            close
+        when Gosu::MsLeft then 
+            @position = @position.move((mouse_x/cell_width).to_i + 3*(mouse_y/cell_width).to_i)
+            if ! @position.possible_moves.empty? then
+                idx = @position.best_move
+                @position = @position.move(idx)
+            end
         end
     end
 
@@ -33,11 +38,25 @@ class Game < Gosu::Window
         #draw position
         position.board.each_with_index do |p,i|
             if p != "-"
-                x = (i%3)*cell_width
+                x = (i%3)*cell_width+@font.text_width(p)/2
                 y = (i/3)*cell_width
                 @font.draw(p, x, y, 0)
             end
         end
+
+        # display message
+        display_message("You won") if @position.win?("x")
+        display_message("Computer won") if @position.win?("o")
+        display_message("Draw") if @position.possible_moves.empty?
+    end
+
+    def display_message(txt)
+        gray = Gosu::Color::GRAY
+        draw_quad(0,100,gray,
+                  width, 100, gray,
+                  width, 500, gray,
+                  0, 500, gray)
+        @message_font.draw(txt, (width-@message_font.text_width(txt))/2, width/2-100, 0)              
     end
 end
 
